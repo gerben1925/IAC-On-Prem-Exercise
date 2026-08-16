@@ -1,0 +1,36 @@
+name: "Infrastructure : Bootstrap LXD Host & Servers"
+
+on:
+  workflow_dispatch: # Manual execution only
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: "Provision LXD Infrastructure"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: Connect to Tailscale Network
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Set up SSH Private Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HOMELAB_SSH_KEY }}
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Run Ansible Infrastructure Playbook
+        run: |
+          export ANSIBLE_HOST_KEY_CHECKING=False
+          ansible-playbook -i ansible/inventory.ini ansible/bootstrap.yml \
+            --extra-vars "ansible_host=${{ secrets.HOMELAB_IP }} ansible_user=${{ secrets.HOMELAB_USER }}"
