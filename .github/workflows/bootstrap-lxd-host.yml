@@ -1,7 +1,7 @@
 name: "Infrastructure : Bootstrap LXD Host & Servers"
 
 on:
-  workflow_dispatch: # Manual trigger only via GitHub UI
+  workflow_dispatch: # Manual execution trigger
 
 permissions:
   contents: read
@@ -30,7 +30,8 @@ jobs:
       - name: Install Ansible Core & Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ansible community.general
+          pip install ansible
+          ansible-galaxy collection install community.general
 
       - name: Execute Ansible Host Bootstrap Playbook
         run: |
