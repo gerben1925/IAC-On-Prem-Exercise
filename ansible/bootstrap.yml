@@ -4,29 +4,24 @@
   become: true
 
   tasks:
-
     # ----------------------------------------
     # 1. Install & Initialize LXD
     # ----------------------------------------
-
     - name: Install LXD via Snap
-      ansible.builtin.command:
-        cmd: snap install lxd --classic
-      register: lxd_install
-      changed_when: "'already installed' not in lxd_install.stdout"
-      failed_when:
-        - lxd_install.rc != 0
-        - "'already installed' not in lxd_install.stdout"
+      community.general.snap:
+        name: lxd
+        state: present
 
     - name: Initialize LXD Engine
       ansible.builtin.command:
         cmd: lxd init --auto
+      register: lxd_init
+      changed_when: "'LXD has already been configured' not in lxd_init.stderr"
       failed_when: false
 
     # ----------------------------------------
-    # 2. Server 1
+    # 2. Server 1 (Database & Management Node)
     # ----------------------------------------
-
     - name: Check if server1 exists
       ansible.builtin.command:
         cmd: lxc info server1
@@ -43,12 +38,19 @@
       ansible.builtin.command:
         cmd: lxc config set server1 security.nesting true
 
+    - name: Check if Docker is installed on Server 1
+      ansible.builtin.command:
+        cmd: lxc exec server1 -- docker --version
+      register: server1_docker
+      changed_when: false
+      failed_when: false
+
     - name: Install Docker Engine inside Server 1
       ansible.builtin.command:
         cmd: >
           lxc exec server1 -- bash -c
-          "apt-get update &&
-           apt-get install -y docker.io docker-compose-v2"
+          "apt-get update && apt-get install -y docker.io docker-compose-v2"
+      when: server1_docker.rc != 0
 
     - name: Copy Docker Compose file to Server 1
       ansible.builtin.command:
@@ -64,9 +66,8 @@
           "cd /root && docker compose up -d"
 
     # ----------------------------------------
-    # 3. Server 2
+    # 3. Server 2 (Application Node)
     # ----------------------------------------
-
     - name: Check if server2 exists
       ansible.builtin.command:
         cmd: lxc info server2
@@ -83,13 +84,19 @@
       ansible.builtin.command:
         cmd: lxc config set server2 security.nesting true
 
+    - name: Check if Docker is installed on Server 2
+      ansible.builtin.command:
+        cmd: lxc exec server2 -- docker --version
+      register: server2_docker
+      changed_when: false
+      failed_when: false
+
     - name: Install Docker Engine inside Server 2
       ansible.builtin.command:
         cmd: >
           lxc exec server2 -- bash -c
-          "apt-get update &&
-           apt-get install -y docker.io docker-compose-v2"
-
+          "apt-get update && apt-get install -y docker.io docker-compose-v2"
+      when: server2_docker.rc != 0
 
 
 # ---
