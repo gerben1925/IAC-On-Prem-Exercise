@@ -1,0 +1,50 @@
+# 1. Base Runtime Image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+
+WORKDIR /app
+
+EXPOSE 8087
+
+ENV ASPNETCORE_HTTP_PORTS=8087
+
+
+# 2. Build Stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+WORKDIR /src
+
+# Copy project file first for Docker layer caching
+COPY ["IAC-On-Prem-Exercise.csproj", "./"]
+
+# Restore NuGet packages
+RUN dotnet restore "IAC-On-Prem-Exercise.csproj"
+
+# Copy the remaining source code
+COPY . .
+
+# Build
+RUN dotnet build "IAC-On-Prem-Exercise.csproj" \
+    -c Release \
+    -o /app/build \
+    --no-restore
+
+
+# 3. Publish Stage
+FROM build AS publish
+
+RUN dotnet publish "IAC-On-Prem-Exercise.csproj" \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false \
+    --no-restore
+
+
+# 4. Final Runtime Image
+FROM base AS final
+
+WORKDIR /app
+
+# Copy published output
+COPY --from=publish /app/publish .
+
+ENTRYPOINT ["dotnet", "IAC-On-Prem-Exercise.dll"]

@@ -1,0 +1,16 @@
+services:
+  iac-on-prem-exercise:
+    image: iac-on-prem-exercise:latest
+
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+
+    container_name: iac_on_prem_exercise
+
+    ports:
+      - "8087:8087"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8087

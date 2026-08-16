@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "IAC-On-Prem-Exercise/1.0.0": {
+        "runtime": {
+          "IAC-On-Prem-Exercise.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "IAC-On-Prem-Exercise/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
