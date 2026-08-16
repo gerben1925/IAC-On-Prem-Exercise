@@ -4,42 +4,85 @@
   become: true
 
   tasks:
-    # --- 1. Install & Initialize LXD ---
+
+    # --------------------------------------------------
+    # 1. Install LXD
+    # --------------------------------------------------
+
     - name: Install LXD via Snap
-      snap:
+      community.general.snap:
         name: lxd
         state: present
 
-    - name: Initialize LXD Engine
-      command: lxd init --auto
+    - name: Check LXD status
+      ansible.builtin.command: lxc info
+      register: lxd_info
+      changed_when: false
       failed_when: false
 
-    # --- 2. Create Server 1 (Database & Management Node) ---
-    - name: Provision Server 1 LXC Container
-      command: lxc launch ubuntu:22.04 server1
+    - name: Initialize LXD
+      ansible.builtin.command: lxd init --auto
+      when: lxd_info.rc != 0
 
-    - name: Enable Docker Nesting on Server 1
-      command: lxc config set server1 security.nesting true
+    # --------------------------------------------------
+    # 2. Server 1
+    # --------------------------------------------------
+
+    - name: Check if server1 exists
+      ansible.builtin.command: lxc info server1
+      register: server1_info
+      changed_when: false
+      failed_when: false
+
+    - name: Provision Server 1 LXC container
+      ansible.builtin.command: lxc launch ubuntu:22.04 server1
+      when: server1_info.rc != 0
+
+    - name: Enable Docker nesting on Server 1
+      ansible.builtin.command:
+        cmd: lxc config set server1 security.nesting true
 
     - name: Install Docker Engine inside Server 1
-      command: >
-        lxc exec server1 -- bash -c 
-        "apt-get update && apt-get install -y docker.io docker-compose-v2"
+      ansible.builtin.command:
+        cmd: >
+          lxc exec server1 -- bash -c
+          "apt-get update &&
+           apt-get install -y docker.io docker-compose-v2"
 
     - name: Copy docker-compose file to Server 1
-      command: lxc file push bootstrap/docker-compose.server1.yml server1/root/docker-compose.yml
+      ansible.builtin.command:
+        cmd: >
+          lxc file push
+          bootstrap/docker-compose.server1.yml
+          server1/root/docker-compose.yml
 
     - name: Launch MinIO and SQL Server inside Server 1
-      command: lxc exec server1 -- bash -c "cd /root && docker compose up -d"
+      ansible.builtin.command:
+        cmd: >
+          lxc exec server1 -- bash -c
+          "cd /root && docker compose up -d"
 
-    # --- 3. Create Server 2 (Web Application Host Node) ---
-    - name: Provision Server 2 LXC Container
-      command: lxc launch ubuntu:22.04 server2
+    # --------------------------------------------------
+    # 3. Server 2
+    # --------------------------------------------------
 
-    - name: Enable Docker Nesting on Server 2
-      command: lxc config set server2 security.nesting true
+    - name: Check if server2 exists
+      ansible.builtin.command: lxc info server2
+      register: server2_info
+      changed_when: false
+      failed_when: false
+
+    - name: Provision Server 2 LXC container
+      ansible.builtin.command: lxc launch ubuntu:22.04 server2
+      when: server2_info.rc != 0
+
+    - name: Enable Docker nesting on Server 2
+      ansible.builtin.command:
+        cmd: lxc config set server2 security.nesting true
 
     - name: Install Docker Engine inside Server 2
-      command: >
-        lxc exec server2 -- bash -c 
-        "apt-get update && apt-get install -y docker.io docker-compose-v2"
+      ansible.builtin.command:
+        cmd: >
+          lxc exec server2 -- bash -c
+          "apt-get update &&
+           apt-get install -y docker.io docker-compose-v2"
