@@ -58,9 +58,8 @@
 
     - name: Create Docker Compose file on Server 1
       ansible.builtin.command:
-        cmd: >
-          lxc exec server1 -- bash -c
-          "cat << 'EOF' > /root/docker-compose.yml
+        cmd: |
+          lxc exec server1 -- bash -c "cat << 'EOF' > /root/docker-compose.yml
           version: '3.8'
 
           services:
