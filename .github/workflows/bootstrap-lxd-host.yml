@@ -1,7 +1,7 @@
-name: "Infrastructure : Bootstrap LXD Host & Servers"
+name: "Infrastructure - Bootstrap LXD Host & Servers"
 
 on:
-  workflow_dispatch: # Manual execution only
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -10,7 +10,9 @@ jobs:
   bootstrap:
     name: "Provision LXD Infrastructure"
     runs-on: ubuntu-latest
+
     steps:
+
       - name: Checkout Repository Code
         uses: actions/checkout@v4
 
@@ -26,11 +28,26 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.HOMELAB_SSH_KEY }}
 
+      - name: Test SSH Connection
+        run: |
+          ssh \
+            -o StrictHostKeyChecking=no \
+            ${{ secrets.HOMELAB_USER }}@${{ secrets.HOMELAB_IP }} \
+            "whoami && hostname && sudo -n whoami"
+
       - name: Install Ansible
-        run: pip install ansible
+        run: |
+          python3 -m pip install --user ansible
 
       - name: Run Ansible Infrastructure Playbook
+        env:
+          HOMELAB_IP: ${{ secrets.HOMELAB_IP }}
+          HOMELAB_USER: ${{ secrets.HOMELAB_USER }}
         run: |
           export ANSIBLE_HOST_KEY_CHECKING=False
-          ansible-playbook -i ansible/inventory.ini ansible/bootstrap.yml \
-            --extra-vars "ansible_host=${{ secrets.HOMELAB_IP }} ansible_user=${{ secrets.HOMELAB_USER }}"
+
+          ansible-playbook \
+            -i ansible/inventory.ini \
+            ansible/bootstrap.yml \
+            -e "ansible_host=${HOMELAB_IP}" \
+            -e "ansible_user=${HOMELAB_USER}"
