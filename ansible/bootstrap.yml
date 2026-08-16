@@ -52,12 +52,40 @@
           "apt-get update && apt-get install -y docker.io docker-compose-v2"
       when: server1_docker.rc != 0
 
-    - name: Copy Docker Compose file to Server 1
+    - name: Ensure root directory exists on Server 1
+      ansible.builtin.command:
+        cmd: lxc exec server1 -- mkdir -p /root
+
+    - name: Create Docker Compose file on Server 1
       ansible.builtin.command:
         cmd: >
-          lxc file push
-          docker/docker-compose.yml
-          server1/root/docker-compose.yml
+          lxc exec server1 -- bash -c
+          "cat << 'EOF' > /root/docker-compose.yml
+          version: '3.8'
+
+          services:
+            minio:
+              image: minio/minio
+              container_name: minio
+              ports:
+                - '9000:9000'
+                - '9001:9001'
+              environment:
+                MINIO_ROOT_USER: root
+                MINIO_ROOT_PASSWORD: password123
+              command: server /data --console-address ':9001'
+              restart: always
+
+            mssql:
+              image: mcr.microsoft.com/mssql/server:2022-latest
+              container_name: mssql
+              ports:
+                - '1433:1433'
+              environment:
+                ACCEPT_EULA: 'Y'
+                MSSQL_SA_PASSWORD: 'YourStrong!Password123'
+              restart: always
+          EOF"
 
     - name: Launch MinIO and SQL Server inside Server 1
       ansible.builtin.command:
