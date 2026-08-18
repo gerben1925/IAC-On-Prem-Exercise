@@ -1,0 +1,52 @@
+ - name: Clear Previous LXD and Container Installation
+   hosts: homelab
+   become: true
+
+   tasks:
+    # ----------------------------------------
+    # 1. Stop and Destroy Containers
+    # ----------------------------------------
+    - name: Stop and delete existing containers (server1, server2)
+      ansible.builtin.shell: |
+        lxc stop {{ item }} --force || true
+        lxc delete {{ item }} || true
+      loop:
+        - server1
+        - server2
+      ignore_errors: true
+
+    - name: Delete cached LXC images
+      ansible.builtin.shell: "lxc image delete --all"
+      failed_when: false
+
+    # ----------------------------------------
+    # 2. Uninstall LXD Engine
+    # ----------------------------------------
+    - name: Completely remove LXD via Snap (Purge)
+      community.general.snap:
+        name: lxd
+        state: absent
+        purge: true # Ensures configs and networking are wiped
+
+    - name: Remove LXD installer helper package (if present)
+      ansible.builtin.apt:
+        name: lxd-installer
+        state: absent
+        purge: true
+
+    # ----------------------------------------
+    # 3. Final System Cleanup
+    # ----------------------------------------
+    - name: Remove orphaned LXD group
+      ansible.builtin.group:
+        name: lxd
+        state: absent
+
+    - name: Cleanup unused dependencies
+      ansible.builtin.apt:
+        autoremove: yes
+        purge: yes
+
+
+
+  

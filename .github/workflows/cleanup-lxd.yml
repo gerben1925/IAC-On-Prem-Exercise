@@ -1,0 +1,40 @@
+name: "Infrastructure: Decommission LXD Setup"
+
+on:
+  workflow_dispatch: # Manual execution to prevent accidental deletion
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-environment:
+    name: "Purge LXD and Clear Homelab"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: Connect to Tailscale Network
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Configure SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HOMELAB_SSH_KEY }}
+
+      - name: Install Ansible Core & Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+          ansible-galaxy collection install community.general
+
+      - name: Execute Cleanup Playbook
+        run: |
+          export ANSIBLE_HOST_KEY_CHECKING=False
+          ansible-playbook -i ansible/inventory.ini ansible/cleanup_lxd.yml \
+            --extra-vars "ansible_host=${{ secrets.HOMELAB_IP }} ansible_user=${{ secrets.HOMELAB_USER }}"
