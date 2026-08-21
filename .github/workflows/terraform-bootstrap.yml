@@ -35,10 +35,12 @@ jobs:
       - name: Verify RustFS connectivity
         run: |
           curl --fail --silent --show-error \
-            "http://${RUSTFS_IP}:${RUSTFS_PORT}"
+            "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
@@ -50,7 +52,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=tfplan
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
