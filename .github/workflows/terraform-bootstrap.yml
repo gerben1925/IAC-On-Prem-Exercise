@@ -1,0 +1,44 @@
+name: Terraform Bootstrap
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Create Terraform State Bucket
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: terraform-bootstrap
+
+    env:
+      TF_VAR_rustfs_ip: ${{ secrets.RUSTFS_IP }}
+      TF_VAR_rustfs_port: ${{ secrets.RUSTFS_PORT }}
+      TF_VAR_rustfs_access_key: ${{ secrets.RUSTFS_ACCESS_KEY }}
+      TF_VAR_rustfs_secret_key: ${{ secrets.RUSTFS_SECRET_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
