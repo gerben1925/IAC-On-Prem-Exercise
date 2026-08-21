@@ -33,9 +33,17 @@ jobs:
           tags: tag:ci
 
       - name: Verify RustFS connectivity
+        # run: |
+        #   curl --fail --silent --show-error \
+        #     "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}"
+        - name: Verify RustFS connectivity
         run: |
-          curl --fail --silent --show-error \
-            "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}"
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}")
+          echo "RustFS responded with HTTP status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -eq 000 ]; then
+            echo "Failed to connect to RustFS"
+            exit 1
+          fi
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
