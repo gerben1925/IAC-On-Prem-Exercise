@@ -36,7 +36,6 @@ jobs:
         # run: |
         #   curl --fail --silent --show-error \
         #     "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}"
-        - name: Verify RustFS connectivity
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}")
           echo "RustFS responded with HTTP status: $HTTP_STATUS"
