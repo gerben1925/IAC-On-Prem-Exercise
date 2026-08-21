@@ -34,9 +34,6 @@ jobs:
           tags: tag:ci
 
       - name: Verify RustFS connectivity
-        # run: |
-        #   curl --fail --silent --show-error \
-        #     "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}"
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://${TF_VAR_rustfs_ip}:${TF_VAR_rustfs_port}")
           echo "RustFS responded with HTTP status: $HTTP_STATUS"
