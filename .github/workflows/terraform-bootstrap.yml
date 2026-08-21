@@ -13,7 +13,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: terraform-bootstrap
+        working-directory: terraform/terraform-bootstrap
 
     env:
       TF_VAR_rustfs_ip: ${{ secrets.RUSTFS_IP }}
